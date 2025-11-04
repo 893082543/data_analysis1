@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国内销售数据分析查询平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .analysis-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .analysis-text {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+            white-space: pre-line;
+        }
+        .date-picker-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-analysis {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        .btn-analysis:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- 标题 -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold text-primary">
+                    <i class="bi bi-graph-up"></i> 国内销售数据分析查询平台
+                </h1>
+                <p class="lead text-muted">基于绿农合数据的智能销售分析系统</p>
+            </div>
+        </div>
+
+        <!-- 时间选择和分析类型 -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="date-picker-container">
+                    <h5><i class="bi bi-calendar-range"></i> 时间范围选择</h5>
+                    <div class="mb-3">
+                        <label class="form-label">开始时间</label>
+                        <input type="month" class="form-control" id="startMonth" value="2024-10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">结束时间</label>
+                        <input type="month" class="form-control" id="endMonth" value="2025-09">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">显示时间范围</label>
+                        <div class="form-control" id="displayRange">2024年10月01日-2025年09月30日</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="date-picker-container">
+                    <h5><i class="bi bi-bar-chart"></i> 分析类型选择</h5>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('overall_trend')">
+                                <i class="bi bi-trending-up"></i> 整体销售趋势
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('monthly_champion_dealer')">
+                                <i class="bi bi-trophy"></i> 月度销冠经销商
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('dealer_sales_details')">
+                                <i class="bi bi-list-ol"></i> 经销商销售明细
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('top_dealers_trend')">
+                                <i class="bi bi-graph-up-arrow"></i> 销售前五名经销商逐月变化
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('dealer_product_composition')">
+                                <i class="bi bi-pie-chart"></i> 销售前五名经销商产品组成
+                            </button>
+                        </div>
+                        <!-- 新增的产品分析按钮 -->
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('product_sales_details')">
+                                <i class="bi bi-box-seam"></i> 产品销售明细
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('monthly_champion_product')">
+                                <i class="bi bi-award"></i> 月度销冠产品
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-analysis w-100" onclick="analyzeData('top_products_trend')">
+                                <i class="bi bi-graph-up"></i> 销售前五名产品逐月变化
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载指示器 -->
+        <div class="loading" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <p class="mt-2">数据分析中，请稍候...</p>
+        </div>
+
+        <!-- 结果显示区域 -->
+        <div id="results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 更新时间范围显示
+        function updateDisplayRange() {
+            const startMonth = document.getElementById('startMonth').value;
+            const endMonth = document.getElementById('endMonth').value;
+            
+            if (startMonth && endMonth) {
+                const startDate = startMonth + '-01';
+                const endDate = new Date(endMonth + '-01');
+                endDate.setMonth(endDate.getMonth() + 1);
+                endDate.setDate(0); // 设置为当月最后一天
+                
+                const endDay = endDate.getDate();
+                const displayRange = `${startMonth.replace('-', '年')}月01日-${endMonth.replace('-', '年')}月${endDay}日`;
+                document.getElementById('displayRange').textContent = displayRange;
+            }
+        }
+
+        // 初始化时间选择器
+        document.getElementById('startMonth').addEventListener('change', updateDisplayRange);
+        document.getElementById('endMonth').addEventListener('change', updateDisplayRange);
+        updateDisplayRange();
+
+        // 数据分析函数
+        async function analyzeData(analysisType) {
+            const startMonth = document.getElementById('startMonth').value;
+            const endMonth = document.getElementById('endMonth').value;
+            
+            if (!startMonth || !endMonth) {
+                alert('请选择完整的时间范围');
+                return;
+            }
+            
+            const startDate = startMonth + '-01';
+            const endDate = new Date(endMonth + '-01');
+            endDate.setMonth(endDate.getMonth() + 1);
+            endDate.setDate(0);
+            const endDateStr = endDate.toISOString().split('T')[0];
+            
+            // 显示加载指示器
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        start_date: startDate,
+                        end_date: endDateStr,
+                        analysis_type: analysisType
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResults(data, analysisType);
+                } else {
+                    throw new Error(data.error || '分析失败');
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> ${error.message}
+                    </div>
+                `;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // 显示分析结果
+        function displayResults(data, analysisType) {
+            let resultsHtml = '';
+            
+            if (data.type === 'single_chart') {
+                resultsHtml = `
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="chart-container">
+                                <h4><i class="bi bi-bar-chart-line"></i> 分析图表</h4>
+                                <img src="data:image/png;base64,${data.chart}" class="img-fluid" alt="分析图表">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="analysis-text">
+                                <h5><i class="bi bi-chat-left-text"></i> 分析结论</h5>
+                                ${data.analysis}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                if (data.table_data && data.table_data.length > 0) {
+                    resultsHtml += `
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="chart-container">
+                                    <h4><i class="bi bi-table"></i> 明细数据</h4>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    ${Object.keys(data.table_data[0]).map(key => 
+                                                        `<th>${key}</th>`
+                                                    ).join('')}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${data.table_data.map(row => 
+                                                    `<tr>${Object.values(row).map(val => 
+                                                        `<td>${val}</td>`
+                                                    ).join('')}</tr>`
+                                                ).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (data.type === 'multiple_charts') {
+                resultsHtml = `
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="analysis-text">
+                                <h5><i class="bi bi-chat-left-text"></i> 总体分析结论</h5>
+                                ${data.analysis}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                data.charts.forEach(chartData => {
+                    resultsHtml += `
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="chart-container">
+                                    <h4><i class="bi bi-bar-chart-line"></i> ${chartData.name}</h4>
+                                    <img src="data:image/png;base64,${chartData.chart}" class="img-fluid" alt="${chartData.name}图表">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="analysis-text">
+                                    <h6><i class="bi bi-chat-left"></i> ${chartData.name}分析</h6>
+                                    ${chartData.analysis}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('results').innerHTML = resultsHtml;
+        }
+    </script>
+</body>
+</html>
